@@ -1,0 +1,128 @@
+{
+  "examples": [
+    {
+      "task": "criar API Go com SQLite e CRUD de TODO list",
+      "actions": [
+        {
+          "name": "write_file",
+          "arguments": {
+            "file_path": "go/go.mod",
+            "content": "module teste\n\ngo 1.18\n\nrequire (\n\tgithub.com/mattn/go-sqlite3 v1.14.0\n)"
+          }
+        },
+        {
+          "name": "write_file", 
+          "arguments": {
+            "file_path": "go/main.go",
+            "content": "package main\n\nimport (\n\t\"database/sql\"\n\t_ \"github.com/mattn/go-sqlite3\"\n\t\"encoding/json\"\n\t\"net/http\"\n\t\"strconv\"\n)\n\nvar db *sql.DB\n\ntype Todo struct {\n\tID int `json:\"id\"`\n\tTitle string `json:\"title\"`\n\tDone bool `json:\"done\"`\n}\n\nfunc init() {\n\tdb, _ = sql.Open(\"sqlite3\", \"./todos.db\")\n\tdb.Exec(\"CREATE TABLE IF NOT EXISTS todos (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT, done BOOLEAN)\")\n}\n\nfunc todosHandler(w http.ResponseWriter, r *http.Request) {\n\tswitch r.Method {\n\tcase \"GET\":\n\t\trows, _ := db.Query(\"SELECT id, title, done FROM todos\")\n\t\tdefer rows.Close()\n\t\tvar todos []Todo\n\t\tfor rows.Next() {\n\t\t\tvar t Todo\n\t\t\trows.Scan(&t.ID, &t.Title, &t.Done)\n\t\t\ttodos = append(todos, t)\n\t\t}\n\t\tjson.NewEncoder(w).Encode(todos)\n\tcase \"POST\":\n\t\tvar t Todo\n\t\tjson.NewDecoder(r.Body).Decode(&t)\n\t\tdb.Exec(\"INSERT INTO todos (title, done) VALUES (?, ?)\", t.Title, t.Done)\n\t\tw.Write([]byte(\"created\"))\n\tcase \"PUT\":\n\t\tid := r.URL.Query().Get(\"id\")\n\t\tvar t Todo\n\t\tjson.NewDecoder(r.Body).Decode(&t)\n\t\tdb.Exec(\"UPDATE todos SET title=?, done=? WHERE id=?\", t.Title, t.Done, id)\n\t\tw.Write([]byte(\"updated\"))\n\tcase \"DELETE\":\n\t\tid := r.URL.Query().Get(\"id\")\n\t\tdb.Exec(\"DELETE FROM todos WHERE id=?\", id)\n\t\tw.Write([]byte(\"deleted\"))\n\t}\n}\n\nfunc main() {\n\thttp.HandleFunc(\"/todos\", todosHandler)\n\thttp.ListenAndServe(\":8080\", nil)\n}"
+          }
+        }
+      ],
+      "timestamp": 1777578000000
+    },
+    {
+      "task": "criar API Go com MariaDB/MySQL e CRUD de TODO list",
+      "actions": [
+        {
+          "name": "run_cmd",
+          "arguments": {
+            "command": "cd go && go mod init teste"
+          }
+        },
+        {
+          "name": "write_file",
+          "arguments": {
+            "file_path": "go/go.mod",
+            "content": "module teste\n\ngo 1.18\n\nrequire (\n\tgithub.com/go-sql-driver/mysql v1.6.0\n)"
+          }
+        },
+        {
+          "name": "write_file",
+          "arguments": {
+            "file_path": "go/main.go",
+            "content": "package main\n\nimport (\n\t\"database/sql\"\n\t_ \"github.com/go-sql-driver/mysql\"\n\t\"encoding/json\"\n\t\"net/http\"\n\t\"strconv\"\n)\n\nvar db *sql.DB\n\ntype Todo struct {\n\tID int `json:\"id\"`\n\tTitle string `json:\"title\"`\n\tDone bool `json:\"done\"`\n}\n\nfunc init() {\n\tdb, _ = sql.Open(\"mysql\", \"user:password@tcp(127.0.0.1:3306)/todos_db\")\n\tdb.Exec(\"CREATE TABLE IF NOT EXISTS todos (id INT AUTO_INCREMENT PRIMARY KEY, title VARCHAR(255), done BOOLEAN)\")\n}\n\nfunc todosHandler(w http.ResponseWriter, r *http.Request) {\n\tswitch r.Method {\n\tcase \"GET\":\n\t\trows, _ := db.Query(\"SELECT id, title, done FROM todos\")\n\t\tdefer rows.Close()\n\t\tvar todos []Todo\n\t\tfor rows.Next() {\n\t\t\tvar t Todo\n\t\t\trows.Scan(&t.ID, &t.Title, &t.Done)\n\t\t\ttodos = append(todos, t)\n\t\t}\n\t\tjson.NewEncoder(w).Encode(todos)\n\tcase \"POST\":\n\t\tvar t Todo\n\t\tjson.NewDecoder(r.Body).Decode(&t)\n\t\tdb.Exec(\"INSERT INTO todos (title, done) VALUES (?, ?)\", t.Title, t.Done)\n\t\tw.Write([]byte(\"created\"))\n\tcase \"PUT\":\n\t\tid := r.URL.Query().Get(\"id\")\n\t\tvar t Todo\n\t\tjson.NewDecoder(r.Body).Decode(&t)\n\t\tdb.Exec(\"UPDATE todos SET title=?, done=? WHERE id=?\", t.Title, t.Done, id)\n\t\tw.Write([]byte(\"updated\"))\n\tcase \"DELETE\":\n\t\tid := r.URL.Query().Get(\"id\")\n\t\tdb.Exec(\"DELETE FROM todos WHERE id=?\", id)\n\t\tw.Write([]byte(\"deleted\"))\n\t}\n}\n\nfunc main() {\n\thttp.HandleFunc(\"/todos\", todosHandler)\n\thttp.ListenAndServe(\":8080\", nil)\n}"
+          }
+        }
+      ],
+      "timestamp": 1777578000001
+    },
+    {
+      "task": "criar API Go com PostgreSQL e CRUD de TODO list",
+      "actions": [
+        {
+          "name": "run_cmd",
+          "arguments": {
+            "command": "cd go && go mod init teste"
+          }
+        },
+        {
+          "name": "write_file",
+          "arguments": {
+            "file_path": "go/go.mod",
+            "content": "module teste\n\ngo 1.18\n\nrequire (\n\tgithub.com/lib/pq v1.10.0\n)"
+          }
+        },
+        {
+          "name": "write_file",
+          "arguments": {
+            "file_path": "go/main.go",
+            "content": "package main\n\nimport (\n\t\"database/sql\"\n\t_ \"github.com/lib/pq\"\n\t\"encoding/json\"\n\t\"net/http\"\n\t\"strconv\"\n)\n\nvar db *sql.DB\n\ntype Todo struct {\n\tID int `json:\"id\"`\n\tTitle string `json:\"title\"`\n\tDone bool `json:\"done\"`\n}\n\nfunc init() {\n\tdb, _ = sql.Open(\"postgres\", \"user=postgres password=secret dbname=todos_db sslmode=disable\")\n\tdb.Exec(\"CREATE TABLE IF NOT EXISTS todos (id SERIAL PRIMARY KEY, title VARCHAR(255), done BOOLEAN)\")\n}\n\nfunc todosHandler(w http.ResponseWriter, r *http.Request) {\n\tswitch r.Method {\n\tcase \"GET\":\n\t\trows, _ := db.Query(\"SELECT id, title, done FROM todos\")\n\t\tdefer rows.Close()\n\t\tvar todos []Todo\n\t\tfor rows.Next() {\n\t\t\tvar t Todo\n\t\t\trows.Scan(&t.ID, &t.Title, &t.Done)\n\t\t\ttodos = append(todos, t)\n\t\t}\n\t\tjson.NewEncoder(w).Encode(todos)\n\tcase \"POST\":\n\t\tvar t Todo\n\t\tjson.NewDecoder(r.Body).Decode(&t)\n\t\tdb.Exec(\"INSERT INTO todos (title, done) VALUES ($1, $2)\", t.Title, t.Done)\n\t\tw.Write([]byte(\"created\"))\n\tcase \"PUT\":\n\t\tid := r.URL.Query().Get(\"id\")\n\t\tvar t Todo\n\t\tjson.NewDecoder(r.Body).Decode(&t)\n\t\tdb.Exec(\"UPDATE todos SET title=$1, done=$2 WHERE id=$3\", t.Title, t.Done, id)\n\t\tw.Write([]byte(\"updated\"))\n\tcase \"DELETE\":\n\t\tid := r.URL.Query().Get(\"id\")\n\t\tdb.Exec(\"DELETE FROM todos WHERE id=$1\", id)\n\t\tw.Write([]byte(\"deleted\"))\n\t}\n}\n\nfunc main() {\n\thttp.HandleFunc(\"/todos\", todosHandler)\n\thttp.ListenAndServe(\":8080\", nil)\n}"
+          }
+        }
+      ],
+      "timestamp": 1777578000002
+    },
+    {
+      "task": "criar API Go com MongoDB e CRUD de TODO list",
+      "actions": [
+        {
+          "name": "run_cmd",
+          "arguments": {
+            "command": "cd go && go mod init teste"
+          }
+        },
+        {
+          "name": "write_file",
+          "arguments": {
+            "file_path": "go/go.mod",
+            "content": "module teste\n\ngo 1.18\n\nrequire (\n\tgo.mongodb.org/mongo-driver v1.11.0\n)"
+          }
+        },
+        {
+          "name": "write_file",
+          "arguments": {
+            "file_path": "go/main.go",
+            "content": "package main\n\nimport (\n\t\"context\"\n\t\"encoding/json\"\n\t\"net/http\"\n\t\"time\"\n\t\"go.mongodb.org/mongo-driver/mongo\"\n\t\"go.mongodb.org/mongo-driver/mongo/options\"\n)\n\ntype Todo struct {\n\tID primitive.ObjectID `json:\"_id,omitempty\" bson:\"_id,omitempty\"`\n\tTitle string `json:\"title\" bson:\"title\"`\n\tDone bool `json:\"done\" bson:\"done\"`\n}\n\nvar collection *mongo.Collection\n\nfunc init() {\n\tclient, _ := mongo.Connect(context.Background(), options.Client().ApplyURI(\"mongodb://localhost:27017\"))\n\tcollection = client.Database(\"todos_db\").Collection(\"todos\")\n}\n\nfunc todosHandler(w http.ResponseWriter, r *http.Request) {\n\tswitch r.Method {\n\tcase \"GET\":\n\t\tcursor, _ := collection.Find(context.Background(), map[string]interface{}{})\n\t\tdefer cursor.Close(context.Background())\n\t\tvar todos []Todo\n\t\tcursor.All(context.Background(), &todos)\n\t\tjson.NewEncoder(w).Encode(todos)\n\tcase \"POST\":\n\t\tvar t Todo\n\t\tjson.NewDecoder(r.Body).Decode(&t)\n\t\tcollection.InsertOne(context.Background(), t)\n\t\tw.Write([]byte(\"created\"))\n\tcase \"PUT\":\n\t\tid := r.URL.Query().Get(\"id\")\n\t\tvar t Todo\n\t\tjson.NewDecoder(r.Body).Decode(&t)\n\t\tcollection.UpdateOne(context.Background(), map[string]interface{}\"id\": id}, map[string]interface{}\"$set\": t})\n\t\tw.Write([]byte(\"updated\"))\n\tcase \"DELETE\":\n\t\tid := r.URL.Query().Get(\"id\")\n\t\tcollection.DeleteOne(context.Background(), map[string]interface{}\"id\": id})\n\t\tw.Write([]byte(\"deleted\"))\n\t}\n}\n\nfunc main() {\n\thttp.HandleFunc(\"/todos\", todosHandler)\n\thttp.ListenAndServe(\":8080\", nil)\n}"
+          }
+        }
+      ],
+      "timestamp": 1777578000003
+    },
+    {
+      "task": "corrigir go.mod com versão Go válida",
+      "actions": [
+        {
+          "name": "write_file",
+          "arguments": {
+            "file_path": "go/go.mod",
+            "content": "module teste\n\ngo 1.18"
+          }
+        }
+      ],
+      "timestamp": 1777578000004
+    },
+    {
+      "task": "compilar e testar API Go",
+      "actions": [
+        {
+          "name": "run_cmd",
+          "arguments": {
+            "command": "cd go && go mod tidy && go build -o app ."
+          }
+        }
+      ],
+      "timestamp": 1777578000005
+    }
+  ],
+  "failures": []
+}

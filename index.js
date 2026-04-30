@@ -652,23 +652,69 @@ async function run(task) {
   OBJETIVO:
 ${task}
 
-${getFewShotExamples()}
-${getFailurePatterns()}
+  ${getFewShotExamples()}
+  ${getFailurePatterns()}
 
-INSTRUÇÕES PASSO-A-PASSO:
-1. PRIMEIRO: ler arquivos existentes com read_file (ex: "go/main.go")
-2. SÓ DEPOIS: criar/modificar arquivos necessários
-3. PARA CRIAR INTERFACE WEB: 
-   - Criar arquivos HTML/JS/CSS (ex: "go/static/index.html", "go/static/app.js")
-   - Servir arquivos estáticos no Go com http.FileServer
-   - MODIFICAR main.go para servir os arquivos estáticos
-4. Compilar: run_cmd com "cd go && go build -o app ."
-5. Se erro de compilação, usar write_file para corrigir
-6. TESTAR: run_cmd com "curl localhost:8080/" e "curl localhost:8080/phone"
-7. done SÓ QUANDO:
-   - Interface web estiver criada (arquivos HTML/JS existem)
-   - API compilar sem erros
-   - Endpoints responderem corretamente
+  REGRAS ESPECÍFICAS PARA GO + SQLITE:
+  1. go.mod DEVE usar module "teste" (NUNCA "github.com/yourusername/yourproject")
+  2. SEMPRE execute "cd go && go mod tidy" após criar go.mod
+  3. Para SQLite: importe "database/sql" e _ "github.com/mattn/go-sqlite3"
+  4. Crie handlers SEPARADOS para cada CRUD:
+     - GET /todos → lista todos
+     - GET /todo/{id} → busca um
+     - POST /todos → cria novo
+     - PUT /todo/{id} → atualiza
+     - DELETE /todo/{id} → remove
+  5. Estrutura do TODO: {id, title, done bool}
+  6. Inicialize db em init(): db, _ = sql.Open("sqlite3", "./todos.db")
+  7. Crie tabela se não existir: CREATE TABLE IF NOT EXISTS todos (...)
+  8. NUNCA use ":memory:" em produção - use arquivo .db
+  9. main.go deve ter imports completos e compilar de primeira
+
+  INSTRUÇÕES PASSO-A-PASSO:
+ 1. PRIMEIRO: criar go.mod com "go mod init teste" via run_cmd
+ 2. CRIAR main.go com SQLite e CRUD completo (veja exemplo abaixo)
+ 3. Executar "cd go && go mod tidy" para baixar dependências
+ 4. CRIAR interface web (se solicitado): "go/static/index.html" e "go/static/app.js"
+ 5. Compilar: run_cmd com "cd go && go mod tidy && go build -o app ."
+ 6. Se erro de compilação, usar write_file para corrigir
+ 7. TESTAR: run_cmd com "curl localhost:8080/todos"
+ 8. done SÓ QUANDO:
+    - main.go compilar sem erros
+    - Endpoints CRUD responderem corretamente
+    - (Opcional) Interface web criada e funcionando
+
+EXEMPLO DE CRUD GO + SQLITE (main.go):
+package main
+
+import (
+    "database/sql"
+    _ "github.com/mattn/go-sqlite3"
+    "net/http"
+    "encoding/json"
+)
+
+var db *sql.DB
+
+func init() {
+    var err error
+    db, err = sql.Open("sqlite3", "./todos.db")
+    if err != nil { panic(err) }
+    db.Exec("CREATE TABLE IF NOT EXISTS todos (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT, done BOOLEAN)")
+}
+
+func todosHandler(w http.ResponseWriter, r *http.Request) {
+    // Implementar CRUD aqui baseado em r.Method
+    // GET → listar, POST → criar, PUT → atualizar, DELETE → deletar
+    json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+}
+
+func main() {
+    fs := http.FileServer(http.Dir("./static"))
+    http.Handle("/", fs)
+    http.HandleFunc("/todos", todosHandler)
+    http.ListenAndServe(":8080", nil)
+}
 
 REGRAS DE CAMINHOS (PATH):
 - Projeto está em: ${projectPath}
@@ -714,11 +760,11 @@ main.go DEVE ter:
   ou
   http.Handle("/", http.FileServer(http.Dir("static")))
 
-REGRAS DE NOMES:
-- Arquivo principal SEMPRE se chama "main.go"
-- NUNCA criar arquivo com nome "nome" ou sem extensão
-- go.mod: módulo deve ser "teste" (não "nome")
-- Compilação: use sempre "go build -o app ." para evitar binário com nome errado
+  REGRAS DE NOMES:
+  - Arquivo principal SEMPRE se chama "main.go"
+  - NUNCA criar arquivo com nome "nome" ou sem extensão
+  - go.mod: módulo deve ser "teste" (NÃO "github.com/yourusername/yourproject")
+  - Compilação: use sempre "cd go && go mod tidy && go build -o app ."
 
 REGRAS DE CÓDIGO:
 - Handler: http.HandleFunc("/test", handler) ← parênteses obrigatórios
