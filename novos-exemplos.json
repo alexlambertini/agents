@@ -30,6 +30,12 @@
       "task": "criar API Go com Elasticsearch",
       "actions": [
         {
+          "name": "run_cmd",
+          "arguments": {
+            "command": "cd go && go mod init teste"
+          }
+        },
+        {
           "name": "write_file",
           "arguments": {
             "file_path": "go/go.mod",
@@ -40,7 +46,7 @@
           "name": "write_file",
           "arguments": {
             "file_path": "go/main.go",
-            "content": "package main\n\nimport (\n\t\"github.com/elastic/go-elasticsearch/v8\"\n\t\"net/http\"\n)\n\nvar es *elasticsearch.Client\n\nfunc init() {\n\tvar err error\n\tes, err = elasticsearch.NewClient(elasticsearch.Config{\n\t\tAddresses: []string{\"http://localhost:9200\"},\n\t})\n}\n\nfunc handler(w http.ResponseWriter, r *http.Request) {\n\tw.Write([]byte(\"Elasticsearch OK\"))\n}\n\nfunc main() {\n\thttp.HandleFunc(\"/test\", handler)\n\thttp.ListenAndServe(\":8080\", nil)\n}"
+            "content": "package main\n\nimport (\n\t\"github.com/elastic/go-elasticsearch/v8\"\n\t\"net/http\"\n)\n\nvar es *elasticsearch.Client\n\nfunc init() {\n\tvar err error\n\tes, err = elasticsearch.NewClient(elasticsearch.Config{\n\t\tAddresses: []string{\"http://localhost:9200\"},\n\t})\n\tif err != nil { panic(err) }\n}\n\nfunc handler(w http.ResponseWriter, r *http.Request) {\n\tw.Write([]byte(\"Elasticsearch OK\"))\n}\n\nfunc main() {\n\thttp.HandleFunc(\"/test\", handler)\n\thttp.ListenAndServe(\":8080\", nil)\n}"
           }
         }
       ],
@@ -49,6 +55,12 @@
     {
       "task": "criar API Go com GraphQL",
       "actions": [
+        {
+          "name": "run_cmd",
+          "arguments": {
+            "command": "cd go && go mod init teste"
+          }
+        },
         {
           "name": "write_file",
           "arguments": {
@@ -60,7 +72,7 @@
           "name": "write_file",
           "arguments": {
             "file_path": "go/main.go",
-            "content": "package main\n\nimport (\n\t\"github.com/graphql-go/graphql\"\n\t\"net/http\"\n\t\"encoding/json\"\n)\n\nvar schema, _ = graphql.NewSchema(graphql.SchemaConfig{\n\tQuery: graphql.NewObject(graphql.ObjectConfig{\n\t\tName: \"RootQuery\",\n\t\tFields: graphql.Fields{\n\t\t\t\"hello\": &graphql.Field{\n\t\t\t\tType: graphql.String,\n\t\t\t\tResolve: func(p graphql.ResolveParams) (interface{}, error) {\n\t\t\t\t\treturn \"world\", nil\n\t\t\t\t},\n\t\t\t},\n\t\t},\n\t}),\n})\n\nfunc handler(w http.ResponseWriter, r *http.Request) {\n\tresult := graphql.Do(graphql.Params{\n\t\tSchema: schema,\n\t\tRequestString: r.URL.Query().Get(\"query\"),\n\t})\n\tjson.NewEncoder(w).Encode(result)\n}\n\nfunc main() {\n\thttp.HandleFunc(\"/graphql\", handler)\n\thttp.ListenAndServe(\":8080\", nil)\n}"
+            "content": "package main\n\nimport (\n\t\"github.com/graphql-go/graphql\"\n\t\"net/http\"\n\t\"encoding/json\"\n)\n\nvar schema, err = graphql.NewSchema(graphql.SchemaConfig{\n\tQuery: graphql.NewObject(graphql.ObjectConfig{\n\t\tName: \"RootQuery\",\n\t\tFields: graphql.Fields{\n\t\t\t\"hello\": &graphql.Field{\n\t\t\t\tType: graphql.String,\n\t\t\t\tResolve: func(p graphql.ResolveParams) (interface{}, error) {\n\t\t\t\t\treturn \"world\", nil\n\t\t\t\t},\n\t\t\t},\n\t\t},\n\t}),\n})\n\nfunc handler(w http.ResponseWriter, r *http.Request) {\n\tresult := graphql.Do(graphql.Params{\n\t\tSchema: schema,\n\t\tRequestString: r.URL.Query().Get(\"query\"),\n\t})\n\tjson.NewEncoder(w).Encode(result)\n}\n\nfunc main() {\n\thttp.HandleFunc(\"/graphql\", handler)\n\thttp.ListenAndServe(\":8080\", nil)\n}"
           }
         }
       ],

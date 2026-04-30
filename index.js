@@ -700,13 +700,30 @@ func init() {
     var err error
     db, err = sql.Open("sqlite3", "./todos.db")
     if err != nil { panic(err) }
-    db.Exec("CREATE TABLE IF NOT EXISTS todos (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT, done BOOLEAN)")
+    _, err = db.Exec("CREATE TABLE IF NOT EXISTS todos (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT, done BOOLEAN)")
+    if err != nil { panic(err) }
 }
 
 func todosHandler(w http.ResponseWriter, r *http.Request) {
-    // Implementar CRUD aqui baseado em r.Method
-    // GET → listar, POST → criar, PUT → atualizar, DELETE → deletar
-    json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+    switch r.Method {
+    case "GET":
+        rows, err := db.Query("SELECT id, title, done FROM todos")
+        if err != nil { http.Error(w, err.Error(), 500); return }
+        defer rows.Close()
+        var todos []map[string]interface{}
+        for rows.Next() {
+            var id int; var title string; var done bool
+            rows.Scan(&id, &title, &done)
+            todos = append(todos, map[string]interface{}{"id": id, "title": title, "done": done})
+        }
+        json.NewEncoder(w).Encode(todos)
+    case "POST":
+        var t struct { Title string; Done bool }
+        json.NewDecoder(r.Body).Decode(&t)
+        _, err := db.Exec("INSERT INTO todos (title, done) VALUES (?, ?)", t.Title, t.Done)
+        if err != nil { http.Error(w, err.Error(), 500); return }
+        w.Write([]byte("created"))
+    }
 }
 
 func main() {
@@ -771,6 +788,15 @@ REGRAS DE CÓDIGO:
 - ListenAndServe: http.ListenAndServe(":8080", nil) ← parênteses obrigatórios
 - Imports devem estar entre aspas: import "net/http"
 - Sempre teste compilação com "go build"
+
+REGRAS CRÍTICAS PARA GO + SQL:
+- db.Exec() RETORNA 2 VALORES: (sql.Result, error)
+- CORRETO: _, err = db.Exec("INSERT ...")
+- ERRADO: _ = db.Exec("INSERT ...") ← CAUSA ERRO DE COMPILAÇÃO
+- ERRADO: db.Exec("INSERT ...") ← CAUSA ERRO DE COMPILAÇÃO
+- SEMPRE: _, err = db.Exec(...) ou resultado, err := db.Exec(...)
+- db.Query() TAMBÉM retorna (rows, error): rows, err := db.Query(...)
+- db.QueryRow() retorna apenas *Row: row := db.QueryRow(...)
 
 PROJETO PATH:
 ${projectPath}
