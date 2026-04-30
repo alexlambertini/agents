@@ -710,7 +710,7 @@ func todosHandler(w http.ResponseWriter, r *http.Request) {
         rows, err := db.Query("SELECT id, title, done FROM todos")
         if err != nil { http.Error(w, err.Error(), 500); return }
         defer rows.Close()
-        var todos []map[string]interface{}
+        todos := []map[string]interface{}{}
         for rows.Next() {
             var id int; var title string; var done bool
             rows.Scan(&id, &title, &done)
@@ -794,10 +794,8 @@ REGRAS DE CÓDIGO:
 
 REGRAS CRÍTICAS PARA GO + SQL:
 - db.Exec() RETORNA 2 VALORES: (sql.Result, error)
-- CORRETO: _, err = db.Exec("INSERT ...")
-- ERRADO: _ = db.Exec("INSERT ...") ← CAUSA ERRO DE COMPILAÇÃO
-- ERRADO: db.Exec("INSERT ...") ← CAUSA ERRO DE COMPILAÇÃO
-- SEMPRE: _, err = db.Exec(...) ou resultado, err := db.Exec(...)
+- CORRETO: _, err = db.Exec("INSERT ...", params...)
+- SEMPRE inicialize slices como array VAZIO, não nil: todos := []map[string]interface{}{}
 - db.Query() TAMBÉM retorna (rows, error): rows, err := db.Query(...)
 - db.QueryRow() retorna apenas *Row: row := db.QueryRow(...)
 
