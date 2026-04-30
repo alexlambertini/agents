@@ -234,7 +234,7 @@ ai "adicione um novo end-point nesse projeto, com crude de telefone, get, dele, 
 
 **3. Criar interface web:**
 ```bash
-ai "preciso de uma interface web, para interagir com o end-point phone" /home/lambertini/teste
+ai "preciso de uma interface web, para interagir com o end-point /todos" /home/lambertini/teste
 ```
 
 **4. Projeto do zero (sem path = diretório atual):**

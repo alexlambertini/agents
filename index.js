@@ -756,17 +756,19 @@ O QUE É "INTERFACE WEB" (OBRIGATÓRIO):
 EXEMPLO DE INTERFACE WEB (obrigatório criar):
 go/static/index.html:
   <html><body>
-    <button onclick="testPhone('GET')">GET Phone</button>
-    <button onclick="testPhone('POST')">POST Phone</button>
-    <button onclick="testPhone('PUT')">PUT Phone</button>
-    <button onclick="testPhone('DELETE')">DELETE Phone</button>
+    <h1>API CRUD</h1>
+    <button onclick="testAPI('GET')">GET</button>
+    <button onclick="testAPI('POST')">POST</button>
+    <button onclick="testAPI('PUT')">PUT</button>
+    <button onclick="testAPI('DELETE')">DELETE</button>
     <div id="result"></div>
     <script src="app.js"></script>
   </body></html>
 
 go/static/app.js:
-  function testPhone(method) {
-    fetch('/phone', {method: method})
+  function testAPI(method) {
+    // Use a rota do recurso (plural): /carros, /produtos, /todos, etc.
+    fetch('/recursos', {method: method})
       .then(r => r.text())
       .then(d => document.getElementById('result').innerText = d);
   }

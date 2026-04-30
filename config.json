@@ -2,7 +2,7 @@
   "llm_provider": "ollama",
   "ollama": {
     "base_url": "http://localhost:11434",
-    "model": "agent-os"
+    "model": "agent-os-v2"
   },
   "openai": {
     "api_key": "",
