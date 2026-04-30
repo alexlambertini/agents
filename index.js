@@ -105,6 +105,64 @@ function getFailurePatterns() {
 }
 
 // --------------------
+// ML SERVICE INTEGRATION
+// --------------------
+const ML_SERVICE_URL = 'http://localhost:8000';
+
+let actionHistory = [];
+
+async function callMLService(endpoint, data) {
+  try {
+    const response = await axios.post(`${ML_SERVICE_URL}/${endpoint}`, data, {
+      timeout: 5000
+    });
+    return response.data;
+  } catch (error) {
+    console.log(`⚠️ ML Service offline: ${error.message}`);
+    return null;
+  }
+}
+
+async function analyzeErrorWithML(error, task, lastAction, filePath) {
+  const mlResult = await callMLService('analyze-error', {
+    error: error,
+    task: task,
+    last_action: lastAction,
+    file_path: filePath,
+    language: 'go'
+  });
+  
+  if (mlResult && mlResult.suggestion && mlResult.suggestion.confidence > 0.6) {
+    console.log(`🧠 ML Sugestion (${(mlResult.suggestion.confidence * 100).toFixed(0)}% confidence): ${mlResult.suggestion.recommended_action}`);
+    console.log(`📊 Error type: ${mlResult.error_type}`);
+    
+    if (mlResult.similar_past_errors && mlResult.similar_past_errors.length > 0) {
+      console.log(`🔍 Similar past errors: ${mlResult.similar_past_errors.length} found`);
+    }
+    
+    return mlResult.suggestion;
+  }
+  
+  return null;
+}
+
+async function reportSuccessToML(task, actions) {
+  await callMLService('learn-success', {
+    task: task,
+    actions: actions,
+    final_state: { status: 'completed' }
+  });
+}
+
+async function reportFailureToML(error, action, task) {
+  await callMLService('learn-failure', {
+    error: error,
+    action: action,
+    task: task
+  });
+}
+
+// --------------------
 // STATE DE CONTROLE (POLICY LAYER)
 // --------------------
 let patchFailuresByFile = {};
@@ -410,13 +468,26 @@ function executeTool(toolName, normalized) {
 // --------------------
 // EXECUTOR ROBUSTO (ORQUESTRADOR)
 // --------------------
-function execute(action) {
+async function execute(action) {
   try {
     const validated = validate(action);
     const normalized = normalize(validated);
 
-    // POLICY LAYER: decidir tool
-    const selectedTool = selectTool(normalized);
+    // POLÍTICA HÍBRIDA: ML decide se confiança alta
+    const mlSuggestion = await analyzeErrorWithML(
+      "", // error será preenchido após execução se falhar
+      task,
+      { name: action.name, arguments: action.arguments },
+      action.arguments?.file_path
+    );
+
+    let selectedTool = selectTool(normalized);
+
+    // Se ML tem sugestão com alta confiança, sobrepor
+    if (mlSuggestion && mlSuggestion.confidence > 0.7) {
+      selectedTool = mlSuggestion.recommended_action;
+      console.log(`🎯 ML override: ${normalized.name} → ${selectedTool}`);
+    }
 
     // Se houve mudança de tool, converter arguments se necessário
     if (selectedTool !== normalized.name && selectedTool === "write_file" && normalized.name === "apply_patch") {
@@ -475,7 +546,17 @@ function execute(action) {
       }
     }
 
-    return executeTool(selectedTool, normalized);
+    const result = executeTool(selectedTool, normalized);
+
+    // Registrar ação no histórico para ML
+    actionHistory.push({
+      name: action.name,
+      arguments: action.arguments,
+      result: result,
+      timestamp: Date.now()
+    });
+
+    return result;
   } catch (e) {
     if (action.name === "apply_patch") {
       const file = action.arguments?.file_path;
@@ -672,7 +753,7 @@ Go (sintaxe crítica):
       continue;
     }
 
-    const result = execute(action);
+    const result = await execute(action);
     console.log("RESULT:", result);
 
     // STUCK DETECTION: detectar ação repetitiva
@@ -698,6 +779,15 @@ OBRIGATÓRIO:
     // Controle de falhas
     if (result.startsWith("ERROR:")) {
       consecutiveFailures++;
+
+      // Reportar falha para ML
+      await reportFailureToML(result, action, task);
+
+      // Tentar usar ML para corrigir
+      const mlAdvice = await analyzeErrorWithML(result, task, action, action.arguments?.file_path);
+      if (mlAdvice && mlAdvice.recommended_action !== action.name) {
+        context += `\n🧠 ML SUGGESTION: Tente usar ${mlAdvice.recommended_action} em vez de ${action.name}`;
+      }
 
       if (action.name === "apply_patch") {
         const file = action.arguments?.file_path;
@@ -764,6 +854,9 @@ OBRIGATÓRIO: continuar trabalhando até criar todos os arquivos.
         // Coletar ações bem-sucedidas
         const successfulActions = context.match(/AÇÃO: ({.*?})/g)?.slice(-5) || [];
         addSuccessExample(task, successfulActions);
+        
+        // Reportar sucesso para ML
+        await reportSuccessToML(task, actionHistory);
       }
       break;
     }
