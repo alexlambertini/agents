@@ -6,6 +6,36 @@ const { execSync } = require("child_process");
 const diff = require("diff");
 
 // --------------------
+// CONFIGURATION (Multi-LLM Support)
+// --------------------
+const CONFIG_PATH = path.join(__dirname, 'config.json');
+
+function loadConfig() {
+  try {
+    if (fs.existsSync(CONFIG_PATH)) {
+      return JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf-8'));
+    }
+  } catch (e) {}
+  
+  // Default config
+  return {
+    "llm_provider": "ollama",
+    "ollama": {
+      "base_url": "http://localhost:11434",
+      "model": "agent-os"
+    },
+    "openai": {
+      "api_key": "",
+      "base_url": "https://api.openai.com/v1",
+      "model": "gpt-4"
+    },
+    "ml_service_url": "http://localhost:8000"
+  };
+}
+
+const CONFIG = loadConfig();
+
+// --------------------
 // CLI ARGS
 // --------------------
 const task = process.argv[2];
@@ -575,33 +605,6 @@ async function execute(action) {
 // --------------------
 // CALL MODEL (Multi-LLM Support)
 // --------------------
-const CONFIG_PATH = path.join(__dirname, 'config.json');
-
-function loadConfig() {
-  try {
-    if (fs.existsSync(CONFIG_PATH)) {
-      return JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf-8'));
-    }
-  } catch (e) {}
-  
-  // Default config
-  return {
-    "llm_provider": "ollama",
-    "ollama": {
-      "base_url": "http://localhost:11434",
-      "model": "agent-os"
-    },
-    "openai": {
-      "api_key": "",
-      "base_url": "https://api.openai.com/v1",
-      "model": "gpt-4"
-    },
-    "ml_service_url": "http://localhost:8000"
-  };
-}
-
-const CONFIG = loadConfig();
-
 async function callModel(prompt) {
   const provider = CONFIG.llm_provider || 'ollama';
   

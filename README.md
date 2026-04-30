@@ -141,8 +141,28 @@ ai-cli/
 
 ---
 
-## 🛠 Pré-requisitos
+## 🛠 Instalação Automática (Recomendado)
 
+### Método 1: Instalação com `install.sh` (ZERO configuração!)
+```bash
+# Clone o repositório
+git clone https://github.com/alexlambertini/agents.git ~/.ai-cli
+cd ~/.ai-cli
+
+# Execute o instalador (vai instalar tudo automaticamente!)
+bash install.sh
+```
+
+O instalador vai:
+- ✅ Verificar/instalar **Node.js** (v18+)
+- ✅ Verificar/instalar **Ollama**
+- ✅ Baixar modelo LLM (pergunta qual você quer)
+- ✅ Instalar dependências Node.js
+- ✅ Criar comando global `ai`
+- ✅ (Opcional) Configurar **ML Service** (Python)
+
+### Método 2: Instalação Manual
+**Pré-requisitos:**
 1. **Node.js** (v18+):
    ```bash
    node --version  # deve ser v18 ou superior
@@ -154,12 +174,18 @@ ai-cli/
    ollama serve &
    ```
 
-3. **Modelo Qwen2.5 Coder 7B** (ou agent-os):
+3. **Modelo** (escolha um):
    ```bash
-   ollama pull qwen2.5-coder:7b
-   # ou crie seu modelo customizado:
-   ollama create agent-os -f Modelfile
+   ollama pull agent-os        # Recomendado (customizado)
+   ollama pull qwen2.5-coder:7b # Padrão (código)
    ```
+
+### Método 3: npm (Global)
+```bash
+npm install -g ai-cli  # Se publicado no npm
+# ou local:
+cd ai-cli && npm link
+```
 
 ---
 
@@ -275,6 +301,64 @@ O agente usa **apenas** este formato JSON:
 
 ---
 
+## 🔧 Suporte a Múltiplos LLMs
+
+O AI CLI suporta **qualquer provedor de LLM** através do arquivo `config.json`:
+
+### Configuração (`config.json`)
+```json
+{
+  "llm_provider": "ollama",
+  "ollama": {
+    "base_url": "http://localhost:11434",
+    "model": "agent-os"
+  },
+  "openai": {
+    "api_key": "sk-...",
+    "base_url": "https://api.openai.com/v1",
+    "model": "gpt-4"
+  },
+  "ml_service_url": "http://localhost:8000"
+}
+```
+
+### Provedores Suportados
+1. **Ollama** (padrão - local, privado)
+   - Modelos: `agent-os`, `qwen2.5-coder:7b`, etc.
+   - 📥 `ollama pull <modelo>`
+
+2. **OpenAI** (nuvem)
+   - Requer `api_key` válida
+   - Modelos: `gpt-4`, `gpt-3.5-turbo`, etc.
+
+3. **Outros** (compatíveis com API OpenAI)
+   - Claude, Groq, Together AI, etc.
+   - Apenas altere `base_url` e `api_key`
+
+### Exemplos de Configuração
+**Para usar OpenAI:**
+```json
+{
+  "llm_provider": "openai",
+  "openai": {
+    "api_key": "sk-sua-chave-aqui",
+    "model": "gpt-4"
+  }
+}
+```
+
+**Para usar Ollama com modelo diferente:**
+```json
+{
+  "llm_provider": "ollama",
+  "ollama": {
+    "model": "qwen2.5-coder:7b-opencode"
+  }
+}
+```
+
+---
+
 ## 🧠 Como Funciona (Pipeline)
 
 ```
@@ -363,9 +447,11 @@ ollama create agent-os -f Modelfile
 ```
 ai-cli/
 ├── index.js           # Agente principal com integração ML
+├── install.sh         # Instalador automático (zero config)
+├── config.json        # Configuração de LLMs e ML Service
 ├── train-ml.js        # Script de treinamento ML
-├── package.json       # Dependências (axios, diff)
-├── agent-memory.json  # Memória de aprendizado
+├── package.json       # Dependências e scripts
+├── agent-memory.json  # Memória de aprendizado (auto-gerado)
 ├── README.md         # Este arquivo
 ├── ml_service/        # ML Service (Python)
 │   ├── __init__.py
@@ -375,11 +461,22 @@ ai-cli/
 │   ├── cluster.py       # Clusterização de erros
 │   ├── rl_agent.py      # Reinforcement Learning
 │   └── memory_store.py # Memória vetorial
-├── ml-env/             # Ambiente virtual Python
-├── data/               # Dados de treinamento
+├── ml-env/             # Ambiente virtual Python (opcional)
+├── data/               # Dados de treinamento (opcional)
 │   ├── models/         # Modelos treinados
 │   └── vectors/        # Embeddings salvos
 └── node_modules/       # Dependências Node.js
+```
+
+### Instalação Rápida
+```bash
+# Clone e instale (tudo automático!)
+git clone https://github.com/alexlambertini/agents.git ~/.ai-cli
+cd ~/.ai-cli
+bash install.sh
+
+# Agora use em qualquer lugar:
+ai "sua tarefa" /caminho/do/projeto
 ```
 
 ---
