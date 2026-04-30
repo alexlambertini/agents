@@ -1,0 +1,70 @@
+{
+  "examples": [
+    {
+      "task": "criar API Go com Redis para cache",
+      "actions": [
+        {
+          "name": "run_cmd",
+          "arguments": {
+            "command": "cd go && go mod init teste"
+          }
+        },
+        {
+          "name": "write_file",
+          "arguments": {
+            "file_path": "go/go.mod",
+            "content": "module teste\n\ngo 1.18\n\nrequire (\n\tgithub.com/go-redis/redis/v8 v8.11.0\n)"
+          }
+        },
+        {
+          "name": "write_file",
+          "arguments": {
+            "file_path": "go/main.go",
+            "content": "package main\n\nimport (\n\t\"github.com/go-redis/redis/v8\"\n\t\"net/http\"\n\t\"context\"\n)\n\nvar rdb *redis.Client\nvar ctx = context.Background()\n\nfunc init() {\n\trdb = redis.NewClient(&redis.Options{\n\t\tAddr: \"localhost:6379\",\n\t\tDB: 0,\n\t})\n}\n\nfunc handler(w http.ResponseWriter, r *http.Request) {\n\trdb.Set(ctx, \"key\", \"value\", 0)\n\tw.Write([]byte(\"Redis OK\"))\n}\n\nfunc main() {\n\thttp.HandleFunc(\"/test\", handler)\n\thttp.ListenAndServe(\":8080\", nil)\n}"
+          }
+        }
+      ],
+      "timestamp": 1777581000000
+    },
+    {
+      "task": "criar API Go com Elasticsearch",
+      "actions": [
+        {
+          "name": "write_file",
+          "arguments": {
+            "file_path": "go/go.mod",
+            "content": "module teste\n\ngo 1.18\n\nrequire (\n\tgithub.com/elastic/go-elasticsearch/v8 v8.5.0\n)"
+          }
+        },
+        {
+          "name": "write_file",
+          "arguments": {
+            "file_path": "go/main.go",
+            "content": "package main\n\nimport (\n\t\"github.com/elastic/go-elasticsearch/v8\"\n\t\"net/http\"\n)\n\nvar es *elasticsearch.Client\n\nfunc init() {\n\tvar err error\n\tes, err = elasticsearch.NewClient(elasticsearch.Config{\n\t\tAddresses: []string{\"http://localhost:9200\"},\n\t})\n}\n\nfunc handler(w http.ResponseWriter, r *http.Request) {\n\tw.Write([]byte(\"Elasticsearch OK\"))\n}\n\nfunc main() {\n\thttp.HandleFunc(\"/test\", handler)\n\thttp.ListenAndServe(\":8080\", nil)\n}"
+          }
+        }
+      ],
+      "timestamp": 1777581000001
+    },
+    {
+      "task": "criar API Go com GraphQL",
+      "actions": [
+        {
+          "name": "write_file",
+          "arguments": {
+            "file_path": "go/go.mod",
+            "content": "module teste\n\ngo 1.18\n\nrequire (\n\tgithub.com/graphql-go/graphql v0.8.0\n)"
+          }
+        },
+        {
+          "name": "write_file",
+          "arguments": {
+            "file_path": "go/main.go",
+            "content": "package main\n\nimport (\n\t\"github.com/graphql-go/graphql\"\n\t\"net/http\"\n\t\"encoding/json\"\n)\n\nvar schema, _ = graphql.NewSchema(graphql.SchemaConfig{\n\tQuery: graphql.NewObject(graphql.ObjectConfig{\n\t\tName: \"RootQuery\",\n\t\tFields: graphql.Fields{\n\t\t\t\"hello\": &graphql.Field{\n\t\t\t\tType: graphql.String,\n\t\t\t\tResolve: func(p graphql.ResolveParams) (interface{}, error) {\n\t\t\t\t\treturn \"world\", nil\n\t\t\t\t},\n\t\t\t},\n\t\t},\n\t}),\n})\n\nfunc handler(w http.ResponseWriter, r *http.Request) {\n\tresult := graphql.Do(graphql.Params{\n\t\tSchema: schema,\n\t\tRequestString: r.URL.Query().Get(\"query\"),\n\t})\n\tjson.NewEncoder(w).Encode(result)\n}\n\nfunc main() {\n\thttp.HandleFunc(\"/graphql\", handler)\n\thttp.ListenAndServe(\":8080\", nil)\n}"
+          }
+        }
+      ],
+      "timestamp": 1777581000002
+    }
+  ]
+}
