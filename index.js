@@ -723,6 +723,18 @@ func todosHandler(w http.ResponseWriter, r *http.Request) {
         _, err := db.Exec("INSERT INTO todos (title, done) VALUES (?, ?)", t.Title, t.Done)
         if err != nil { http.Error(w, err.Error(), 500); return }
         w.Write([]byte("created"))
+    case "PUT":
+        id := r.URL.Query().Get("id")
+        var t struct { Title string; Done bool }
+        json.NewDecoder(r.Body).Decode(&t)
+        _, err := db.Exec("UPDATE todos SET title=?, done=? WHERE id=?", t.Title, t.Done, id)
+        if err != nil { http.Error(w, err.Error(), 500); return }
+        w.Write([]byte("updated"))
+    case "DELETE":
+        id := r.URL.Query().Get("id")
+        _, err := db.Exec("DELETE FROM todos WHERE id=?", id)
+        if err != nil { http.Error(w, err.Error(), 500); return }
+        w.Write([]byte("deleted"))
     }
 }
 
@@ -734,11 +746,10 @@ func main() {
 }
 
 REGRAS DE CAMINHOS (PATH):
-- Projeto está em: ${projectPath}
-- Arquivos Go: "main.go" NO DIRETÓRIO ATUAL (NUNCA "go/main.go")
-- go.mod: "go.mod" NO DIRETÓRIO ATUAL (NUNCA "go/go.mod")
-- static/: "static/index.html" NO DIRETÓRIO ATUAL (NUNCA "go/static/")
-- SEMPRE criar arquivos NO DIRETÓRIO ATUAL (pwd)
+- RESPEITE O QUE O USUÁRIO PEDIR:
+  - Se usuário pedir "pasta go" → crie go/main.go, go/go.mod
+  - Se usuário pedir diretório atual → crie main.go, go.mod
+  - Se usuário pedir "pasta api" → crie api/main.go, api/go.mod
 - Se projeto já existe, NÃO recriar estrutura base
 
 EXEMPLO DE FLUXO PARA ADICIONAR CRUD:
