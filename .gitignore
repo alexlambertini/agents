@@ -1,0 +1,7 @@
+node_modules/
+agent-memory.json
+*.log
+.DS_Store
+*.swp
+*~
+.env

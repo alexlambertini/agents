@@ -1,0 +1,12 @@
+{
+  "name": "ai-cli",
+  "version": "1.0.0",
+  "main": "index.js",
+  "bin": {
+    "ai": "./index.js"
+  },
+  "dependencies": {
+    "axios": "^1.6.0",
+    "diff": "^5.2.0"
+  }
+}
