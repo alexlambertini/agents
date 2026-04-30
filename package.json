@@ -1,12 +1,22 @@
 {
   "name": "ai-cli",
-  "version": "1.0.0",
+  "version": "1.1.0",
+  "description": "AI CLI - Agente de Engenharia de Software Local com ML",
   "main": "index.js",
   "bin": {
     "ai": "./index.js"
   },
+  "scripts": {
+    "install": "bash install.sh",
+    "start": "node index.js",
+    "ml:start": "cd ml_service && source ../ml-env/bin/activate && python -m uvicorn main:app --host 0.0.0.0 --port 8000",
+    "train": "node train-ml.js"
+  },
   "dependencies": {
     "axios": "^1.6.0",
     "diff": "^5.2.0"
-  }
+  },
+  "keywords": ["ai", "cli", "agent", "ollama", "go", "machine-learning"],
+  "author": "Alex Lambertini",
+  "license": "MIT"
 }

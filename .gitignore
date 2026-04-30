@@ -4,4 +4,9 @@ agent-memory.json
 .DS_Store
 *.swp
 *~
+ml-env/
+__pycache__/
+*.pyc
+data/
+ml_service/__pycache__/
 .env

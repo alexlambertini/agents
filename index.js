@@ -107,7 +107,7 @@ function getFailurePatterns() {
 // --------------------
 // ML SERVICE INTEGRATION
 // --------------------
-const ML_SERVICE_URL = 'http://localhost:8000';
+const ML_SERVICE_URL = CONFIG.ml_service_url || 'http://localhost:8000';
 
 let actionHistory = [];
 
@@ -243,10 +243,14 @@ function normalize(action) {
 // --------------------
 function extractJSON(text) {
   text = text.replace(/```json|```/g, "");
-
+  
+  // Normalizar variações (action vs name)
+  text = text.replace(/"action"\s*:/g, '"name":');
+  text = text.replace(/"tool"\s*:/g, '"name":');
+  
   const jsonRegex = /\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/g;
   const matches = text.match(jsonRegex);
-
+  
   if (matches) {
     for (let i = matches.length - 1; i >= 0; i--) {
       try {
@@ -259,11 +263,11 @@ function extractJSON(text) {
       }
     }
   }
-
+  
   const start = text.indexOf("{");
   const end = text.lastIndexOf("}");
   if (start === -1 || end === -1) throw new Error("JSON inválido");
-
+  
   return JSON.parse(text.slice(start, end + 1));
 }
 
@@ -569,11 +573,66 @@ async function execute(action) {
 }
 
 // --------------------
-// CALL MODEL
+// CALL MODEL (Multi-LLM Support)
 // --------------------
+const CONFIG_PATH = path.join(__dirname, 'config.json');
+
+function loadConfig() {
+  try {
+    if (fs.existsSync(CONFIG_PATH)) {
+      return JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf-8'));
+    }
+  } catch (e) {}
+  
+  // Default config
+  return {
+    "llm_provider": "ollama",
+    "ollama": {
+      "base_url": "http://localhost:11434",
+      "model": "agent-os"
+    },
+    "openai": {
+      "api_key": "",
+      "base_url": "https://api.openai.com/v1",
+      "model": "gpt-4"
+    },
+    "ml_service_url": "http://localhost:8000"
+  };
+}
+
+const CONFIG = loadConfig();
+
 async function callModel(prompt) {
-  const res = await axios.post("http://localhost:11434/api/generate", {
-    model: MODEL,
+  const provider = CONFIG.llm_provider || 'ollama';
+  
+  if (provider === 'openai') {
+    const apiKey = CONFIG.openai.api_key;
+    if (!apiKey) {
+      throw new Error('OpenAI API key not configured in config.json');
+    }
+    
+    const res = await axios.post(
+      `${CONFIG.openai.base_url}/chat/completions`,
+      {
+        model: CONFIG.openai.model,
+        messages: [{ role: 'user', content: prompt }],
+        stream: false
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+    
+    return res.data.choices[0].message.content;
+  }
+  
+  // Default: Ollama
+  const baseUrl = CONFIG.ollama.base_url || 'http://localhost:11434';
+  const res = await axios.post(`${baseUrl}/api/generate`, {
+    model: CONFIG.ollama.model || 'agent-os',
     prompt,
     stream: false
   });
