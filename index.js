@@ -671,12 +671,12 @@ ${task}
   8. NUNCA use ":memory:" em produção - use arquivo .db
   9. main.go deve ter imports completos e compilar de primeira
 
-  INSTRUÇÕES PASSO-A-PASSO:
- 1. PRIMEIRO: criar go.mod com "go mod init teste" via run_cmd
- 2. CRIAR main.go com SQLite e CRUD completo (veja exemplo abaixo)
- 3. Executar "cd go && go mod tidy" para baixar dependências
- 4. CRIAR interface web (se solicitado): "go/static/index.html" e "go/static/app.js"
- 5. Compilar: run_cmd com "cd go && go mod tidy && go build -o app ."
+  INSTRUÇÕES PASSO-A-PASSO (arquivos NO DIRETÓRIO ATUAL, NÃO em pasta go/):
+ 1. PRIMEIRO: criar go.mod com "go mod init teste" via run_cmd (NO DIRETÓRIO ATUAL)
+ 2. CRIAR main.go NO DIRETÓRIO ATUAL (não go/main.go)
+ 3. Executar "go mod tidy" para baixar dependências
+ 4. CRIAR interface web (se solicitado): "static/index.html" e "static/app.js"
+ 5. Compilar: run_cmd com "go build -o app ."
  6. Se erro de compilação, usar write_file para corrigir
  7. TESTAR: run_cmd com "curl localhost:8080/todos"
  8. done SÓ QUANDO:
@@ -735,26 +735,27 @@ func main() {
 
 REGRAS DE CAMINHOS (PATH):
 - Projeto está em: ${projectPath}
-- Arquivos Go: "go/main.go" (NUNCA "go/go/main.go")
-- go.mod: "go/go.mod" (NUNCA "go/go/go.mod")
-- SEMPRE usar paths relativos ao projeto, sem duplicar pastas
+- Arquivos Go: "main.go" NO DIRETÓRIO ATUAL (NUNCA "go/main.go")
+- go.mod: "go.mod" NO DIRETÓRIO ATUAL (NUNCA "go/go.mod")
+- static/: "static/index.html" NO DIRETÓRIO ATUAL (NUNCA "go/static/")
+- SEMPRE criar arquivos NO DIRETÓRIO ATUAL (pwd)
 - Se projeto já existe, NÃO recriar estrutura base
 
 EXEMPLO DE FLUXO PARA ADICIONAR CRUD:
-1. read_file "go/main.go" → ver código atual
-2. write_file "go/main.go" → escrever código COM NOVOS ENDPOINTS
+1. read_file "main.go" → ver código atual
+2. write_file "main.go" → escrever código COM NOVOS ENDPOINTS
 3. go build → compilar
 4. done apenas quando tudo funcionar
 
 O QUE É "INTERFACE WEB" (OBRIGATÓRIO):
-- Criar pasta "go/static/"
-- Criar "go/static/index.html" → interface HTML com botões para GET/POST/PUT/DELETE
-- Criar "go/static/app.js" → código JavaScript para fazer fetch() aos endpoints
+- Criar pasta "static/" NO DIRETÓRIO ATUAL
+- Criar "static/index.html" → interface HTML com botões para GET/POST/PUT/DELETE
+- Criar "static/app.js" → código JavaScript para fazer fetch() aos endpoints
 - MODIFICAR main.go → adicionar http.FileServer para servir arquivos estáticos
 - TESTAR: acessar localhost:8080/ no navegador
 
 EXEMPLO DE INTERFACE WEB (obrigatório criar):
-go/static/index.html:
+static/index.html:
   <html><body>
     <h1>API CRUD</h1>
     <button onclick="testAPI('GET')">GET</button>
@@ -765,7 +766,7 @@ go/static/index.html:
     <script src="app.js"></script>
   </body></html>
 
-go/static/app.js:
+static/app.js:
   function testAPI(method) {
     // Use a rota do recurso (plural): /carros, /produtos, /todos, etc.
     fetch('/recursos', {method: method})
@@ -959,7 +960,7 @@ OBRIGATÓRIO:
       // Verificar se arquivos obrigatórios foram criados
       const requiredFiles = [];
       if (task.toLowerCase().includes('interface') || task.toLowerCase().includes('web')) {
-        requiredFiles.push('go/static/index.html', 'go/static/app.js');
+        requiredFiles.push('static/index.html', 'static/app.js');
       }
       
       let missingFiles = [];
